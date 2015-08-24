@@ -30,7 +30,7 @@ public class DockerDecoratedLauncher extends Launcher.DecoratedLauncher {
         this.runInContainer = runInContainer;
         this.docker = docker;
         this.build = build;
-        this.userId = whoAmI(launcher);
+        this.userId = "root";
     }
 
 

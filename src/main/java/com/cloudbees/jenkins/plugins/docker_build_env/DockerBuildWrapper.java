@@ -61,6 +61,8 @@ public class DockerBuildWrapper extends BuildWrapper {
 
     private final boolean privileged;
 
+    private String user;
+
     private String group;
 
     private String command;
@@ -71,7 +73,7 @@ public class DockerBuildWrapper extends BuildWrapper {
 
     @DataBoundConstructor
     public DockerBuildWrapper(DockerImageSelector selector, String dockerInstallation, DockerServerEndpoint dockerHost, String dockerRegistryCredentials, boolean verbose, boolean privileged,
-                              List<Volume> volumes, String group, String command,
+                              List<Volume> volumes, String user, String group, String command,
                               boolean forcePull,
                               String net) {
         this.selector = selector;
@@ -81,6 +83,7 @@ public class DockerBuildWrapper extends BuildWrapper {
         this.verbose = verbose;
         this.privileged = privileged;
         this.volumes = volumes != null ? volumes : Collections.<Volume>emptyList();
+        this.user = user;
         this.group = group;
         this.command = command;
         this.forcePull = forcePull;
@@ -225,8 +228,18 @@ public class DockerBuildWrapper extends BuildWrapper {
     }
 
     private String whoAmI(Launcher launcher) throws IOException, InterruptedException {
+        if (user != null && user.equals("root")) {
+            return "root";
+        }
+
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        launcher.launch().cmds("id", "-u").stdout(bos).quiet(true).join();
+        List<String> args = new ArrayList<String>();
+        args.add("id");
+        args.add("-u");
+        if (!isEmpty(user)) {
+            args.add(user);
+        }
+        launcher.launch().cmds(args).stdout(bos).quiet(true).join();
         String uid = bos.toString().trim();
 
         String gid = group;
@@ -292,6 +305,7 @@ public class DockerBuildWrapper extends BuildWrapper {
             this.volumes.add(new Volume("/var/run/docker.sock","/var/run/docker.sock"));
         }
         if (command == null) command = "/bin/cat";
+        if (user == null) user = "root";
         return this;
     }
 }
